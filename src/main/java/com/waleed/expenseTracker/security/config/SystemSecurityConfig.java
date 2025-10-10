@@ -2,13 +2,12 @@ package com.waleed.expenseTracker.security.config;
 
 import com.waleed.expenseTracker.security.jwt.AuthTokenFilter;
 import com.waleed.expenseTracker.security.jwt.JwtAuthEntryPoint;
+import com.waleed.expenseTracker.security.jwt.JwtUtils;
 import com.waleed.expenseTracker.security.user.SystemUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -25,10 +24,11 @@ import java.util.List;
 @EnableWebSecurity
 @Configuration
 public class SystemSecurityConfig {
-    private static final List<String> SECURED_URLS = List.of("/product");
+    private static final List<String> SECURED_URLS = List.of("/api/categories/**");
 
     private final SystemUserDetailsService userDetailsService;
     private final JwtAuthEntryPoint authEntryPoint;
+    private final JwtUtils jwtUtils;
 
 
     @Bean
@@ -37,7 +37,7 @@ public class SystemSecurityConfig {
     }
     @Bean
     public AuthTokenFilter authTokenFilter() {
-        return new AuthTokenFilter();
+        return new AuthTokenFilter(jwtUtils, userDetailsService);
     }
 
     @Bean

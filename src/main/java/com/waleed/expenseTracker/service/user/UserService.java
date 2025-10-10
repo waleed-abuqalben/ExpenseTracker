@@ -9,6 +9,6 @@ public interface UserService {
     User getUserById(Long id);
     User getUserByEmail(String email);
     void deleteUser(Long userId);
-    UserDto convertUserToDto(User user);
+    UserDto convertToDto(User user);
 
 }
