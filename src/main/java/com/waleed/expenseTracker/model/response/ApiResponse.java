@@ -1,8 +1,5 @@
 package com.waleed.expenseTracker.model.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
 import java.time.Instant;
 
 public record ApiResponse<T> (
@@ -14,6 +11,10 @@ public record ApiResponse<T> (
 	public static <T> ApiResponse<T> of(String message, T data) {
 		return new ApiResponse<>(message, data, Instant.now());
 	}
+	public static <T> ApiResponse<T> of(T data) {
+		return new ApiResponse<>(null, data, Instant.now());
+	}
+
 }
 
 

@@ -1,7 +1,6 @@
 package com.waleed.expenseTracker.service.user;
 
-import com.waleed.expenseTracker.exception.AlreadyExistsException;
-import com.waleed.expenseTracker.exception.NotFoundException;
+import com.waleed.expenseTracker.exception.AppException;
 import com.waleed.expenseTracker.model.dto.UserDto;
 import com.waleed.expenseTracker.model.entity.User;
 import com.waleed.expenseTracker.model.request.auth.RegisterRequest;
@@ -22,9 +21,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(RegisterRequest request) {
-        log.info("Start create user {}", request.email());
+        log.info("About to Create user {}", request.email());
         if(userRepository.existsByEmail(request.email()))
-            throw new AlreadyExistsException(
+            throw new AppException(
                     String.format("User with email %s already exists", request.email()));
 
         User user = new User();
@@ -32,7 +31,7 @@ public class UserServiceImpl implements UserService {
         user.setUsername(request.username());
         user.setPassword(passwordEncoder.encode(request.password()));
         User savedUser = userRepository.save(user);
-        log.info("user {} created successfully", user.getEmail());
+        log.info("User {} created successfully", user.getEmail());
         return savedUser;
     }
 
@@ -40,24 +39,24 @@ public class UserServiceImpl implements UserService {
     public User getUserById(Long id) {
       return userRepository.findById(id)
               .orElseThrow(() ->
-                new NotFoundException(String.format("User with id %s not found", id)));
+                new AppException(String.format("User with id %s not found", id)));
     }
 
     @Override
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException(String.format("User with email %s not found", email)));
+                .orElseThrow(() -> new AppException(String.format("User with email %s not found", email)));
     }
 
     @Override
     public void deleteUser(Long userId) {
         userRepository.findById(userId)
                 .ifPresentOrElse(userRepository :: delete,
-                        () -> {throw new NotFoundException("User not found. id: "+userId);});
+                        () -> {throw new AppException("User not found. id: "+userId);});
     }
 
     @Override
-    public UserDto convertUserToDto(User user) {
+    public UserDto convertToDto(User user) {
         return modelMapper.map(user, UserDto.class);
     }
 }
