@@ -1,5 +1,6 @@
 package com.waleed.expenseTracker.model.dto;
 
+import com.waleed.expenseTracker.enums.CategoryType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,6 +9,6 @@ import lombok.Data;
 public class CategoryDto {
     private Long id;
     private String name;
-    private String type;    // INCOME / EXPENSE as String
+    private CategoryType type;    // INCOME / EXPENSE as String
     private Long userId;    // nested User id
 }
