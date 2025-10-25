@@ -5,7 +5,7 @@ import com.waleed.expenseTracker.exception.AppException;
 import com.waleed.expenseTracker.model.dto.CategoryDto;
 import com.waleed.expenseTracker.model.entity.Category;
 import com.waleed.expenseTracker.model.entity.User;
-import com.waleed.expenseTracker.model.request.category.CategoryCreateRequest;
+import com.waleed.expenseTracker.model.request.category.CreateCategoryRequest;
 import com.waleed.expenseTracker.repository.CategoryRepository;
 import com.waleed.expenseTracker.service.user.UserService;
 import jakarta.transaction.Transactional;
@@ -23,7 +23,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserService userService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Override
     public List<CategoryDto> findAll() {return toDto(categoryRepository.findAll());}
 
@@ -36,16 +36,16 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category findByIdAndUserId(Long categoryId, Long userId) {
+    public Category findById(Long categoryId, Long userId) {
         Optional<Category> category = categoryRepository.findByIdAndUserId(categoryId, userId);
-        return category.orElseThrow(() ->
-                new AppException(String.format("Category: %d not found for user: %d", categoryId, userId)));
+        return category
+                .orElseThrow(() -> new AppException(String.format("Category: %d not found for user: %d", categoryId, userId)));
     }
 
 
     @Override
     @Transactional
-    public CategoryDto create(CategoryCreateRequest request, Long userId) {
+    public CategoryDto create(CreateCategoryRequest request, Long userId) {
         log.info("About to Create Category: {} For User: {}", request, userId);
         CategoryType type = CategoryType.valueOf(request.type());
         Optional<Category> category =
@@ -67,7 +67,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto updateName(Long categoryId, String newName, Long userId) {
-        Category category = findByIdAndUserId(categoryId, userId);
+        Category category = findById(categoryId, userId);
         category.setName(newName);
         Category updated = categoryRepository.save(category);
         return toDto(updated);
@@ -80,7 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
         return CategoryDto.builder()
                 .id(category.getId())
                 .name(category.getName())
-                .type(category.getType().name())
+                .type(category.getType())
                 .userId(category.getUser().getId())
                 .build();
     }
