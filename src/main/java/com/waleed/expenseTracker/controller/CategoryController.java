@@ -4,6 +4,7 @@ import com.waleed.expenseTracker.annotation.enumValue.EnumValue;
 import com.waleed.expenseTracker.enums.CategoryType;
 import com.waleed.expenseTracker.model.dto.CategoryDto;
 import com.waleed.expenseTracker.model.entity.Category;
+import com.waleed.expenseTracker.model.mappers.CategoryMapper;
 import com.waleed.expenseTracker.model.request.category.CreateCategoryRequest;
 import com.waleed.expenseTracker.model.request.category.UpdateCategoryNameRequest;
 import com.waleed.expenseTracker.model.response.ApiResponse;
@@ -24,17 +25,18 @@ import static org.springframework.http.HttpStatus.CREATED;
 @RequestMapping("api/categories")
 public class CategoryController {
     private final CategoryService categoryService;
+    private final CategoryMapper mapper;
 
     @GetMapping("user")
     public ResponseEntity<ApiResponse<List<CategoryDto>>> findAll(
             @AuthenticationPrincipal SystemUserDetails user) {
             return ResponseEntity.ok(
-                    ApiResponse.of(categoryService.findAll(user.getId())));
+                    ApiResponse.of(toDto(categoryService.findAll(user.getId()))));
     }
     @GetMapping("all")
     public ResponseEntity<ApiResponse<List<CategoryDto>>> findAll() {
         return ResponseEntity.ok(
-                ApiResponse.of(categoryService.findAll()));
+                ApiResponse.of(toDto(categoryService.findAll())));
     }
 
     @GetMapping("{type}")
@@ -43,7 +45,7 @@ public class CategoryController {
             @PathVariable  String type,
             @AuthenticationPrincipal SystemUserDetails user) {
         return ResponseEntity.ok(
-                ApiResponse.of(categoryService.findAllByType(type, user.getId())));
+                ApiResponse.of(toDto(categoryService.findAllByType(type, user.getId()))));
     }
 
     @PostMapping("category")
@@ -51,20 +53,25 @@ public class CategoryController {
             @Valid @RequestBody CreateCategoryRequest request,
             @AuthenticationPrincipal SystemUserDetails userDetails) {
 
-        CategoryDto created = categoryService.create(request, userDetails.getId());
+        Category created = categoryService.create(request, userDetails.getId());
         return ResponseEntity.status(CREATED)
-                .body(ApiResponse.of("Category Created Successfully", created));
+                .body(ApiResponse.of("Category Created Successfully", toDto(created)));
     }
 
-    @PatchMapping("category/{id}/update-name")
+    @PatchMapping("category/{id}/name")
     public ResponseEntity<ApiResponse<CategoryDto>> updateCategoryName(
             @PathVariable long id,
             @Valid @RequestBody UpdateCategoryNameRequest request,
             @AuthenticationPrincipal SystemUserDetails userDetails)
     {
-        CategoryDto updated = categoryService.updateName(id, request.updatedName(), userDetails.getId());
-        return ResponseEntity.ok(ApiResponse.of("Category Updated Successfully", updated));
+        Category updated = categoryService.updateName(id, request.name(), userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.of("Category Updated Successfully", toDto(updated)));
     }
 
-
+    private CategoryDto toDto(Category category) {
+        return mapper.toDto(category);
+    }
+    private List<CategoryDto> toDto(List<Category> categories) {
+        return mapper.toDtoList(categories);
+    }
 }
