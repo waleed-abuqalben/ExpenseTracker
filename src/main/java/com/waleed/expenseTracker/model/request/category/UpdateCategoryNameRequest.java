@@ -4,6 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 
 public record UpdateCategoryNameRequest(
         @NotBlank(message = "New Category name is required")
-        String updatedName
+        String name
 ) {
 }
