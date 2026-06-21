@@ -43,7 +43,7 @@ public class BudgetServiceImpl implements BudgetService{
 
     @Override
     public List<Budget> findAll(long userId) {
-        return budgetRepository.findByUserId(userId);
+        return budgetRepository.findByUserIdOrderByYearDescMonthDesc(userId);
     }
 
     @Transactional
@@ -72,12 +72,9 @@ public class BudgetServiceImpl implements BudgetService{
     }
 
     @Override
-    public void raiseIfNotExist(long id, long userId) {
-        if(!budgetRepository.existsByIdAndUserId(id, userId)) {
-            throw new AppException(String.format("Budget with id %d not found", id));
-        }
+    public boolean exists(long id, long userId) {
+        return budgetRepository.existsByIdAndUserId(id, userId);
     }
-
 
     private void validateYear(int year) {
         int currentYear = Year.now().getValue();
