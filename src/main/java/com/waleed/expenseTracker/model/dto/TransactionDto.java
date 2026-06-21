@@ -1,7 +1,6 @@
 package com.waleed.expenseTracker.model.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
+import com.waleed.expenseTracker.enums.CategoryType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,14 +10,10 @@ import java.time.LocalDate;
 @Builder
 public class TransactionDto {
     private Long id;
-
     private String name;
-
     private double amount;
-
     private String description;
-
-    private CategoryDto category;
-
+    private CategoryType categoryType;
+    private String categoryName;
     private LocalDate issuedAt;
 }

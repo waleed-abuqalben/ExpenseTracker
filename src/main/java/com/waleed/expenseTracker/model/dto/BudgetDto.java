@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
-
-import static com.waleed.expenseTracker.enums.BudgetStatus.ACTIVE;
 @Data
 @Builder
 public class BudgetDto {
@@ -18,5 +16,4 @@ public class BudgetDto {
     private double totalExpense;
     private double netBalance;
     private List<TransactionDto> transactions;
-    private long userId;
 }

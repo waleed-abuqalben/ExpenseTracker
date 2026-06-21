@@ -9,6 +9,5 @@ import lombok.Data;
 public class CategoryDto {
     private Long id;
     private String name;
-    private CategoryType type;    // INCOME / EXPENSE as String
-    private Long userId;    // nested User id
+    private CategoryType type;
 }
