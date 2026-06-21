@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 public class SystemUserDetails implements UserDetails {
    private Long id;
    private String email;
+
+   private String username;
    private String password;
    private Collection<GrantedAuthority> authorities;
 
@@ -31,6 +33,7 @@ public class SystemUserDetails implements UserDetails {
        return new SystemUserDetails(
                user.getId(),
                user.getEmail(),
+               user.getUsername(),
                user.getPassword(),
                authorities);
    }
@@ -47,7 +50,7 @@ public class SystemUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return username;
     }
 
     @Override
