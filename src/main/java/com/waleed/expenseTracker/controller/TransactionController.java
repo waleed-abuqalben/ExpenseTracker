@@ -1,5 +1,6 @@
 package com.waleed.expenseTracker.controller;
 
+import com.waleed.expenseTracker.enums.CategoryType;
 import com.waleed.expenseTracker.model.dto.TransactionDto;
 import com.waleed.expenseTracker.model.entity.Transaction;
 import com.waleed.expenseTracker.model.mappers.TransactionMapper;
@@ -14,20 +15,32 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import static org.springframework.http.HttpStatus.CREATED;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("api/transactions")
 public class TransactionController {
-    private final TransactionService transactionService;
+    private final TransactionService txnService;
     private final TransactionMapper mapper;
+
+    @GetMapping("budgets/{budgetId}")
+    public ResponseEntity<ApiResponse<List<TransactionDto>>> byBudge(
+            @PathVariable Long budgetId,
+            @RequestParam(required = false) CategoryType type,
+            @AuthenticationPrincipal SystemUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.of(
+                mapper.toDtoList(txnService.findByBudget(budgetId, type, userDetails.getId())))
+        );
+    }
 
     @PostMapping("transaction")
     public ResponseEntity<ApiResponse<TransactionDto>> create(
             @Valid @RequestBody CreateTransactionRequest request,
             @AuthenticationPrincipal SystemUserDetails userDetails) {
-        Transaction created = transactionService.create(request, userDetails.getId());
+        Transaction created = txnService.create(request, userDetails.getId());
         return ResponseEntity.status(CREATED)
                 .body(ApiResponse.of(mapper.toDto(created)));
     }
@@ -37,7 +50,7 @@ public class TransactionController {
             @PathVariable long txId,
             @Valid @RequestBody UpdateTransactionRequest request,
             @AuthenticationPrincipal SystemUserDetails userDetails) {
-        Transaction created = transactionService.update(request, txId, userDetails.getId());
+        Transaction created = txnService.update(request, txId, userDetails.getId());
         return ResponseEntity.ok((ApiResponse.of(mapper.toDto(created))));
     }
 

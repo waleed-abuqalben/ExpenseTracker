@@ -6,7 +6,6 @@ import com.waleed.expenseTracker.model.dto.TransactionDto;
 import com.waleed.expenseTracker.model.entity.Budget;
 import com.waleed.expenseTracker.model.entity.Category;
 import com.waleed.expenseTracker.model.entity.Transaction;
-import com.waleed.expenseTracker.model.mappers.TransactionMapper;
 import com.waleed.expenseTracker.model.request.transaction.CreateTransactionRequest;
 import com.waleed.expenseTracker.model.request.transaction.UpdateTransactionRequest;
 import com.waleed.expenseTracker.repository.TransactionRepository;
@@ -20,14 +19,16 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 
+import static com.waleed.expenseTracker.exception.AppException.raiseIf;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class TransactionServiceImpl implements TransactionService {
+    private static final String BUDGET_NOT_EXIST = "Budget does not exist";
     private final CategoryService categoryService;
     private final BudgetService budgetService;
     private final TransactionRepository transactionRepository;
-    private final TransactionMapper mapper;
 
     @Transactional
     @Override
@@ -45,13 +46,21 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Transaction update(UpdateTransactionRequest request, long txId, long userId) {
         long budgetId = request.budgetId();
-        log.info("Updating Transaction [txId: {}]: {} to Budget {}, userId: {}", txId, request, budgetId, userId);
-        budgetService.raiseIfNotExist(budgetId, userId);
+        log.info("Updating Transaction {}: {} to Budget {}, userId: {}", txId, request, budgetId, userId);
+        raiseIf(budgetService.exists(budgetId, userId), BUDGET_NOT_EXIST);
         Category category = categoryService.findById(request.categoryId(), userId);
         Transaction updated = updateTransaction(request, findOne(txId, budgetId), category);
         Transaction saved = transactionRepository.save(updated);
         this.updateTotals(budgetId, userId);
         return saved;
+    }
+
+    @Override
+    public List<Transaction> findByBudget(long budgetId, CategoryType type, long userId) {
+        raiseIf(!budgetService.exists(budgetId, userId), BUDGET_NOT_EXIST);
+        return type == null
+                ? transactionRepository.findByBudgetId(budgetId)
+                : transactionRepository.findByBudgetIdAndBudgetUserIdAndCategoryType(budgetId, userId, type);
     }
 
 
@@ -63,27 +72,18 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public void delete(long txId, long budgetId, long userId) {
-        log.info("Deleting Transaction txId: {} to Budget: {}, userId: {}", txId, budgetId, userId);
-        budgetService.raiseIfNotExist(budgetId, userId);
-        this.raiseIfNotExist(budgetId, userId);
+        log.info("Deleting Transaction {} from Budget {}, userId: {}", txId, budgetId, userId);
+        raiseIf(!budgetService.exists(budgetId, userId), BUDGET_NOT_EXIST);
+        transactionRepository.delete(findOne(txId, budgetId));
+        updateTotals(budgetId, userId);
+    }
 
-    }
-    @Override
-    public List<TransactionDto> findByBudget(long budgetId, long userId) {
-        return List.of();
-    }
 
     @Override
     public List<TransactionDto> findByBudgetAndCategory(long budgetId, long categoryId, long userId) {
         return List.of();
     }
 
-    @Override
-    public void raiseIfNotExist(long id, long budgetId) {
-        if(!transactionRepository.existsByIdAndBudgetId(id, budgetId)) {
-            throw new AppException("Transaction not found");
-        }
-    }
 
     private Transaction createTransaction(CreateTransactionRequest request, Category category, Budget budget) {
         Transaction tx = new Transaction();
@@ -107,8 +107,8 @@ public class TransactionServiceImpl implements TransactionService {
 
 
     protected void updateTotals(long budgetId, long userId) {
-        Double totalIncome = transactionRepository.sumByBudgetIdAndCategoryType(budgetId, CategoryType.INCOME);
-        Double totalExpense = transactionRepository.sumByBudgetIdAndCategoryType(budgetId, CategoryType.EXPENSE);
+        Double totalIncome = transactionRepository.sumAmountByBudgetIdAndCategoryType(budgetId, CategoryType.INCOME);
+        Double totalExpense = transactionRepository.sumAmountByBudgetIdAndCategoryType(budgetId, CategoryType.EXPENSE);
         budgetService.updateTotals(budgetId, totalIncome, totalExpense, userId);
 
     }
