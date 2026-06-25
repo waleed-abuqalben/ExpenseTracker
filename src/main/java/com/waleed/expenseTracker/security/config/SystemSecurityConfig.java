@@ -30,7 +30,7 @@ import java.util.List;
 @Configuration
 public class SystemSecurityConfig {
     private static final List<String> SECURED_URLS =
-            List.of("/api/categories/**", "/api/budgets/**");
+            List.of("/api/categories/**", "/api/budgets/**", "/api/transactions/**", "/api/recurring-transactions/**");
 
     private final SystemUserDetailsService userDetailsService;
     private final JwtAuthEntryPoint authEntryPoint;
