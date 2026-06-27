@@ -47,7 +47,7 @@ public class TransactionServiceImpl implements TransactionService {
     public Transaction update(UpdateTransactionRequest request, long txId, long userId) {
         long budgetId = request.budgetId();
         log.info("Updating Transaction {}: {} to Budget {}, userId: {}", txId, request, budgetId, userId);
-        raiseIf(budgetService.exists(budgetId, userId), BUDGET_NOT_EXIST);
+        raiseIf(!budgetService.existsById(budgetId, userId), BUDGET_NOT_EXIST);
         Category category = categoryService.findById(request.categoryId(), userId);
         Transaction updated = updateTransaction(request, findOne(txId, budgetId), category);
         Transaction saved = transactionRepository.save(updated);
@@ -57,7 +57,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<Transaction> findByBudget(long budgetId, CategoryType type, long userId) {
-        raiseIf(!budgetService.exists(budgetId, userId), BUDGET_NOT_EXIST);
+        raiseIf(!budgetService.existsById(budgetId, userId), BUDGET_NOT_EXIST);
         return type == null
                 ? transactionRepository.findByBudgetId(budgetId)
                 : transactionRepository.findByBudgetIdAndBudgetUserIdAndCategoryType(budgetId, userId, type);
@@ -73,7 +73,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public void delete(long txId, long budgetId, long userId) {
         log.info("Deleting Transaction {} from Budget {}, userId: {}", txId, budgetId, userId);
-        raiseIf(!budgetService.exists(budgetId, userId), BUDGET_NOT_EXIST);
+        raiseIf(!budgetService.existsById(budgetId, userId), BUDGET_NOT_EXIST);
         transactionRepository.delete(findOne(txId, budgetId));
         updateTotals(budgetId, userId);
     }

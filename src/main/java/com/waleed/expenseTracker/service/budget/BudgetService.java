@@ -10,5 +10,6 @@ public interface BudgetService {
     List<Budget> findAll(long userId);
     Budget create(CreateBudgetRequest request, long userId);
     void updateTotals(long id, double totalIncome, double totalExpense, long userId);
-    boolean exists(long id, long userId);
+    boolean existsById(long id, long userId);
+    boolean existsByYearAndMonth(int year, int month, long userId);
 }

@@ -9,24 +9,31 @@ import com.waleed.expenseTracker.model.entity.Transaction;
 import com.waleed.expenseTracker.model.entity.User;
 import com.waleed.expenseTracker.model.mappers.BudgetMapper;
 import com.waleed.expenseTracker.model.request.budget.CreateBudgetRequest;
+import com.waleed.expenseTracker.model.event.BudgetCreatedEvent;
 import com.waleed.expenseTracker.repository.BudgetRepository;
 import com.waleed.expenseTracker.service.user.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
 import java.util.List;
 
+import static com.waleed.expenseTracker.exception.AppException.raiseIf;
+import static java.lang.String.format;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class BudgetServiceImpl implements BudgetService{
+    private static final String BUDGET_EXISTS_ERROR = "Budget %s/%d already exists";
     private final BudgetRepository budgetRepository;
     private final UserService userService;
     private final BudgetMapper budgetMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     @Value("${app.budget.min-year}")
@@ -38,7 +45,7 @@ public class BudgetServiceImpl implements BudgetService{
     @Override
     public Budget findById(long id, long userId) {
         return budgetRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new AppException(String.format("Budget with id %d not found", id)));
+                .orElseThrow(() -> new AppException(format("Budget with id %d not found", id)));
     }
 
     @Override
@@ -50,16 +57,19 @@ public class BudgetServiceImpl implements BudgetService{
     @Override
     public Budget create(CreateBudgetRequest request, long userId) {
         log.info("Creating budget: {} for user: {}", request, userId);
+
         validateYear(request.year());
-        if(budgetRepository.existsByYearAndMonthAndUserId(request.year(), request.month(), userId)) {
-            throw new AppException(String.format("Budget %s/%d already exists",
-                    Months.fromNumber(request.month()).getDisplayName(), request.year()));
-        }
+
+        raiseIf(existsByYearAndMonth(request.year(), request.month(), userId), format(BUDGET_EXISTS_ERROR,
+                        Months.fromNumber(request.month()).getDisplayName(), request.year()));
+
         User user = userService.getUserById(userId);
         Budget created = budgetRepository.save(budget(request, user));
+        eventPublisher.publishEvent(new BudgetCreatedEvent(created.getId(), userId));
         log.info("Budget created: {}", budgetMapper.toDto(created));
         return created;
     }
+
 
     @Transactional
     @Override
@@ -72,15 +82,20 @@ public class BudgetServiceImpl implements BudgetService{
     }
 
     @Override
-    public boolean exists(long id, long userId) {
+    public boolean existsById(long id, long userId) {
         return budgetRepository.existsByIdAndUserId(id, userId);
+    }
+
+    @Override
+    public boolean existsByYearAndMonth(int year, int month, long userId) {
+        return budgetRepository.existsByYearAndMonthAndUserId(year, month, userId);
     }
 
     private void validateYear(int year) {
         int currentYear = Year.now().getValue();
         int maxAllowedYear = currentYear + MAX_FUTURE_YEARS;
         if(year < MIN_YEAR || year > maxAllowedYear){
-            throw new AppException(String.format("Budget year %d, should between  %d and  %d", year, MIN_YEAR, maxAllowedYear));
+            throw new AppException(format("Budget year %d, should between  %d and  %d", year, MIN_YEAR, maxAllowedYear));
         }
     }
 
